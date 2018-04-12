@@ -30,7 +30,8 @@ INPUT {
 
 
 	<div class="btn">
-		<button id="addSimpleMarkericon">修改标注图标</button>
+		<button id="addMarkericon">增加标注图标</button>
+		<button id="addMarkericon">修改标注图标</button>
 
 		<button id="addPolygonByActual">随机画多边形</button>
 
@@ -76,6 +77,8 @@ INPUT {
 		
 		$(function() {
 			initMap();
+			 $('#addMarkericon').click(addMarkericon)//增加mark图标
+
 			 $('#addSimpleMarkericon').click(addSimpleMarkericon)//修该mark图标
 			$('#addPolygonByActual').click(addPolygonByActual)  //动态画多边形
 
