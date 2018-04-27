@@ -223,11 +223,11 @@
            
             /**************************用鼠标绘制各种图形*****************************/
             function mouseAddPolygonByActual() {
-            	clearDrawOnMap('Square')
-            	addDrawOnMap('Box')
+            	clearDrawOnMap()
+            	addDrawOnMap('Polygon')
 			}
             function mouseAddCircleByActual() {
-            	clearDrawOnMap('None')
+            	clearDrawOnMap()
             	addDrawOnMap('Circle')
 			}
             var drawonmap; // global so we can remove it later
@@ -253,8 +253,7 @@
                             geometry.setCoordinates([
                                 [start, [start[0], end[1]], end, [end[0], start[1]], start]
                             ]);
-                            polygonPoints=geometry.getCoordinates()
-                            console.log(polygonPoints)
+                          
                             return geometry;
                         };
                     }
@@ -269,28 +268,41 @@
                         maxPoints: maxPoints
                     });
                     map.addInteraction(drawonmap);
+                    drawonmap.on('drawstart',function(evt){
+                    	 var polygon = evt.feature.getGeometry();
+                    	 //判断当前图层上有没有点对象
+                    	 /*try {
+							var point=polygon.getCenter();
+							console.log(point)
+						} catch (e) {
+							var point=polygon.getCoordinates();
+							console.log(point)
+						}*/
+                    	
+                    	//clearDrawOnMap()
+                    })
                     drawonmap.on('drawend',function(evt){  
                         var polygon = evt.feature.getGeometry(); 
-                        //console.log(polygon)
-                       
                         setTimeout(function(){              //如果不设置延迟，范围内要素选中后自动取消选中，具体原因不知道  
-                        	 var allfeatures=source_point.getFeatures()
-                        	for(var i=0;i<allfeatures.length;i++){  
-                                var newCoords = allfeatures[i].getGeometry().getCoordinates();
-                                console.log(polygonPoints)
-                                
-                                var isIn= insidePolygon(polygonPoints, newCoords)
-                                console.log(isIn+'isIn');
-                            }  
                            var str = "";  
                             var allfeatures=source_point.getFeatures()
                             for(var i=0;i<allfeatures.length;i++){  
-                                var newCoords = allfeatures[i].getGeometry().getCoordinates();  
-                                var center = polygon.getCenter(),radius = polygon.getRadius();
-                                if(pointInsideCircle(newCoords,center,radius)){  
-                                    selectedFeatures.push(allfeatures[i]); 
-                                }
+                                var newCoords = allfeatures[i].getGeometry().getCoordinates();
+                                try {
+                                	//圆形处理
+                                	 var center = polygon.getCenter(),radius = polygon.getRadius();
+                                     if(pointInsideCircle(newCoords,center,radius)){  
+                                         selectedFeatures.push(allfeatures[i]); 
+                                     }
+								} catch (e) {
+									//多边形处理
+									var points=polygon.getCoordinates();
+									if(insidePolygon(points[0], newCoords)){
+										selectedFeatures.push(allfeatures[i]);
+									}
+								}
                             }  
+                            //框选出的点处理
                             if(selectedFeatures.length>0){
                             	for (var i = 0; i <selectedFeatures.length; i++) {
                             		var selectedFeature=selectedFeatures[i]
@@ -310,6 +322,7 @@
 
             function clearDrawOnMap() {
                 source_draw.clear();
+                selectedFeatures=[];
                 addDrawOnMap("None");
             }
             
