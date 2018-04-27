@@ -31,13 +31,16 @@ INPUT {
 
 	<div class="btn">
 		<button id="addMarkericon">增加标注图标</button>
-		<button id="addMarkericon">修改标注图标</button>
+		<button id="addSimpleMarkericon">修改标注图标</button>
+		<button id="setCenter">设置中心点</button>
+		
+		<button id="deleteicon">删除标注图标</button>
 
 		<button id="addPolygonByActual">随机画多边形</button>
 
 		<button id="mouseAddPolygonByActual">鼠标画多边形</button>
 		<button id="mouseAddCircleByActual">鼠标画圆形</button>
-
+		
 	</div>
 
 	<div id=txt
@@ -77,11 +80,16 @@ INPUT {
 		
 		$(function() {
 			initMap();
-			 $('#addMarkericon').click(addMarkericon)//增加mark图标
-
+/* 			 $('#addMarkericon').click(addMarkericon)//增加mark图标
+ */
+ $('#setCenter').click(function () {
+	 alert('111');
+	 console.log(map.getView());
+	 map.getView().setCenter(ol.proj.transform([121.46912, 36.24274], proj, proj_m))
+})
 			 $('#addSimpleMarkericon').click(addSimpleMarkericon)//修该mark图标
 			$('#addPolygonByActual').click(addPolygonByActual)  //动态画多边形
-
+			$('#deleteicon').click(deleteicon);//删除某个点
 			$('#mouseAddPolygonByActual').click(mouseAddPolygonByActual)  //鼠标画多边形
 			$('#mouseAddCircleByActual').click(mouseAddCircleByActual)  //动态画圆形
 			

@@ -72,7 +72,13 @@
                 }
                 _addMark(101.46912,36.24274,'vehicle_offline',source_point,data,'平湖单兵2正在播视频','5555_fds');//增加标注点
                 _addMark(103.47912,37.45274,'vehicle_offline',source_point,data,'平湖单兵3','4444_fds');//增加标注点
+                _addMark(105.47912,38.45274,'vehicle_offline',source_point,data,'平湖单兵4','6666_fds');//增加标注点
+                _addMark(107.47912,39.45274,'vehicle_offline',source_point,data,'平湖单兵5','7777_fds');//增加标注点
+
                 
+                setTimeout(function (){
+                	deleteicon(source_point,'4444_fds')
+				}, 1000);
                 /************************在地图初始化时添加popup标记******************************/
                 var container = document.getElementById('popup');
                 var content = document.getElementById('popup-content');
@@ -136,14 +142,14 @@
                
             }
             
-            function addMarkericon(){
+            /*function addMarkericon(){
             	 var data={
                  		tel:'1231231',
                  		caseName:'案件111'
                  }
                  _addMark(101.46912,36.24274,'vehicle_offline',source_point,data,'平湖单兵2正在播视频','5555_fds');//增加标注点
                  _addMark(103.47912,37.45274,'vehicle_offline',source_point,data,'平湖单兵3','4444_fds');//增加标注点
-            }
+            }*/
             function _addMark(Lon,Lat,iconImg,layer,data,devName,devId){
             	var p=ol.proj.transform([Lon, Lat], proj, proj_m);
             	addPoint(devId, layer,devName, p,data,iconImg) 
@@ -155,7 +161,7 @@
                		tel:'1231231',
                		caseName:'案件111'
                }
-        	   updatePoint(101.56912,36.54274,'vehicle_offline',source_point,data,'平湖单兵2移动','5555_fds');//增加标注点
+        	   updatePoint(104.56912,38.54274,'vehicle_offline',source_point,data,'平湖单兵6移动','5555_fds');//增加标注点
            }
             //layer:{ol.source.Vector}:需要添加点对象的图层
             //label:{string}:点对象名称
@@ -174,7 +180,11 @@
                 var p=ol.proj.transform([Lon, Lat], proj, proj_m);
             	addPoint(devId, layer,devName, p,data,iconImg)      //在图层上添加点对象
             }
-            
+            //删除标注点
+           function deleteicon(layer,devId){
+        	   var f = layer.getFeatureById(devId);      //通过id在点图层上找到相应的Feature对象          
+               layer.removeFeature(f);  //删除老的点对象 
+           }
             
             /**************************绘制多边形区域*****************************/
             function addPolygonByActual() {
@@ -213,12 +223,15 @@
            
             /**************************用鼠标绘制各种图形*****************************/
             function mouseAddPolygonByActual() {
-            	addDrawOnMap('Polygon')
+            	clearDrawOnMap('Square')
+            	addDrawOnMap('Box')
 			}
             function mouseAddCircleByActual() {
+            	clearDrawOnMap('None')
             	addDrawOnMap('Circle')
 			}
             var drawonmap; // global so we can remove it later
+            var polygonPoints=[];
             function addDrawOnMap(type) {   //The geometry type. One of 'Point', 'LineString', 'LinearRing', 'Polygon', 'MultiPoint', 'MultiLineString', 'MultiPolygon', 'GeometryCollection', 'Circle'.
                 if (drawonmap) {
                     map.removeInteraction(drawonmap);
@@ -240,6 +253,8 @@
                             geometry.setCoordinates([
                                 [start, [start[0], end[1]], end, [end[0], start[1]], start]
                             ]);
+                            polygonPoints=geometry.getCoordinates()
+                            console.log(polygonPoints)
                             return geometry;
                         };
                     }
@@ -256,17 +271,25 @@
                     map.addInteraction(drawonmap);
                     drawonmap.on('drawend',function(evt){  
                         var polygon = evt.feature.getGeometry(); 
-                       // console.log(polygon)
+                        //console.log(polygon)
+                       
                         setTimeout(function(){              //如果不设置延迟，范围内要素选中后自动取消选中，具体原因不知道  
-                            var center = polygon.getCenter(),radius = polygon.getRadius(),extent = polygon.getExtent();  
-                            var str = "";  
+                        	 var allfeatures=source_point.getFeatures()
+                        	for(var i=0;i<allfeatures.length;i++){  
+                                var newCoords = allfeatures[i].getGeometry().getCoordinates();
+                                console.log(polygonPoints)
+                                
+                                var isIn= insidePolygon(polygonPoints, newCoords)
+                                console.log(isIn+'isIn');
+                            }  
+                           var str = "";  
                             var allfeatures=source_point.getFeatures()
                             for(var i=0;i<allfeatures.length;i++){  
                                 var newCoords = allfeatures[i].getGeometry().getCoordinates();  
+                                var center = polygon.getCenter(),radius = polygon.getRadius();
                                 if(pointInsideCircle(newCoords,center,radius)){  
-                                    selectedFeatures.push(allfeatures[i]);  
-                                    
-                                }  
+                                    selectedFeatures.push(allfeatures[i]); 
+                                }
                             }  
                             if(selectedFeatures.length>0){
                             	for (var i = 0; i <selectedFeatures.length; i++) {
@@ -303,5 +326,23 @@
                 var dy = circle[1] - point[1]  
                 return dx * dx + dy * dy <= r * r  
             }  
-
+            /** 
+             *  判断一个点是否在多边形内部 
+             *  @param points 多边形坐标集合 
+             *  @param testPoint 测试点坐标 
+             *  返回true为真，false为假 
+             *  */  
+            function insidePolygon(points, testPoint){  
+                var x = testPoint[0], y = testPoint[1];  
+                var inside = false;  
+                for (var i = 0, j = points.length - 1; i < points.length; j = i++) {  
+                    var xi = points[i][0], yi = points[i][1];  
+                    var xj = points[j][0], yj = points[j][1];  
+          
+                    var intersect = ((yi > y) != (yj > y))  
+                            && (x < (xj - xi) * (y - yi) / (yj - yi) + xi);  
+                    if (intersect) inside = !inside;  
+                }  
+                return inside;  
+            } 
         
