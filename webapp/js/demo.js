@@ -9,6 +9,8 @@
             var source_polygon, vector_polygon;    //定义全局多边形对象源和层
             var source_draw, vector_draw;    //定义全局鼠标绘制对象源和层
             var selectedFeatures=[]; //选中的点
+            var source_zx, vector_zx;    //定义全局折线对象源和层
+            var l;  //定义一根全局折线
             /******************地图初始化函数***************/
             function initMap() {
 
@@ -64,7 +66,15 @@
                 });
 
                 map.addLayer(vector_point);
-               
+                /*******************在地图初始化函数中初始化折线对象标注层************************/
+                source_zx = new ol.source.Vector();
+
+                vector_zx = new ol.layer.Vector({
+                    source: source_zx
+                });
+
+                map.addLayer(vector_zx);
+
                 
                 var data={
                 		tel:'1231231',
@@ -76,9 +86,10 @@
                 _addMark(107.47912,39.45274,'vehicle_offline',source_point,data,'平湖单兵5','7777_fds');//增加标注点
 
                 
-                setTimeout(function (){
+                /*setTimeout(function (){
                 	deleteicon(source_point,'4444_fds')
-				}, 1000);
+                	startDrawLine()
+				}, 1000);*/
                 /************************在地图初始化时添加popup标记******************************/
                 var container = document.getElementById('popup');
                 var content = document.getElementById('popup-content');
@@ -142,14 +153,7 @@
                
             }
             
-            /*function addMarkericon(){
-            	 var data={
-                 		tel:'1231231',
-                 		caseName:'案件111'
-                 }
-                 _addMark(101.46912,36.24274,'vehicle_offline',source_point,data,'平湖单兵2正在播视频','5555_fds');//增加标注点
-                 _addMark(103.47912,37.45274,'vehicle_offline',source_point,data,'平湖单兵3','4444_fds');//增加标注点
-            }*/
+       
             function _addMark(Lon,Lat,iconImg,layer,data,devName,devId){
             	var p=ol.proj.transform([Lon, Lat], proj, proj_m);
             	addPoint(devId, layer,devName, p,data,iconImg) 
@@ -163,14 +167,14 @@
                }
         	   updatePoint(104.56912,38.54274,'vehicle_offline',source_point,data,'平湖单兵6移动','5555_fds');//增加标注点
            }
-            //layer:{ol.source.Vector}:需要添加点对象的图层
-            //label:{string}:点对象名称
-            //iconname:{string}:点对象的图标名称
-            function addPoint(id,layer, label,p, data,iconname) {
-                var style = createStyle(1, 1, false, 0, "images/map/" + iconname+".png", 'center', 'bottom', 'bold 12px 幼圆', label, '#aa3300');
-                var point = createPoint(id, "Point", p[0], p[1],data, style);
-                layer.addFeature(point);
-            }
+           //layer:{ol.source.Vector}:需要添加点对象的图层
+           //label:{string}:点对象名称
+           //iconname:{string}:点对象的图标名称
+           function addPoint(id,layer, label,p, data,iconname) {
+               var style = createStyle(1, 1, false, 0, "images/map/" + iconname+".png", 'center', 'bottom', 'bold 12px 幼圆', label, '#aa3300');
+               var point = createPoint(id, "Point", p[0], p[1],data, style);
+               layer.addFeature(point);
+           }
 
             //更新点对象属性值
             //layer:{ol.source.Vector}:需要更新点对象的图层
@@ -223,22 +227,24 @@
            
             /**************************用鼠标绘制各种图形*****************************/
             function mouseAddPolygonByActual() {
-            	clearDrawOnMap()
             	addDrawOnMap('Polygon')
 			}
             function mouseAddCircleByActual() {
-            	clearDrawOnMap()
             	addDrawOnMap('Circle')
 			}
+            function mouseAddSquareByActual() {
+            	addDrawOnMap('Box')
+			}
+            
             var drawonmap; // global so we can remove it later
-            var polygonPoints=[];
+            var circle=0;
             function addDrawOnMap(type) {   //The geometry type. One of 'Point', 'LineString', 'LinearRing', 'Polygon', 'MultiPoint', 'MultiLineString', 'MultiPolygon', 'GeometryCollection', 'Circle'.
                 if (drawonmap) {
                     map.removeInteraction(drawonmap);
                 }
-                if (type !== 'None') {
-                    var geometryFunction, maxPoints;
-                    if (type === 'Square') {
+                if(type!="None"){
+                	var geometryFunction, maxPoints;
+                	if (type === 'Square') {
                         type = 'Circle';
                         geometryFunction = ol.interaction.Draw.createRegularPolygon(4);
                     } else if (type === 'Box') {
@@ -253,11 +259,9 @@
                             geometry.setCoordinates([
                                 [start, [start[0], end[1]], end, [end[0], start[1]], start]
                             ]);
-                          
                             return geometry;
                         };
                     }
-
                     var style = createPolygonStyle("#808080", 2, 'rgba(200, 0, 255, 0.1)');
                     
                     drawonmap = new ol.interaction.Draw({
@@ -269,20 +273,22 @@
                     });
                     map.addInteraction(drawonmap);
                     drawonmap.on('drawstart',function(evt){
-                    	 var polygon = evt.feature.getGeometry();
-                    	 //判断当前图层上有没有点对象
-                    	 /*try {
-							var point=polygon.getCenter();
-							console.log(point)
-						} catch (e) {
-							var point=polygon.getCoordinates();
-							console.log(point)
-						}*/
-                    	
+                    	console.log('drawstart');
+                    	/*var feature=source_draw.getFeatures();
+                    	console.log(feature);
+                    	circle++;
+                    	if(feature.length>0){
+                    		feature[feature.length-1].setId("circle"+circle);
+                    	}*/
                     	//clearDrawOnMap()
                     })
                     drawonmap.on('drawend',function(evt){  
+                    	console.log('drawend');
+
                         var polygon = evt.feature.getGeometry(); 
+                        console.log(polygon)
+                        var feature=source_draw.getFeatures();
+                    	console.log(feature);
                         setTimeout(function(){              //如果不设置延迟，范围内要素选中后自动取消选中，具体原因不知道  
                            var str = "";  
                             var allfeatures=source_point.getFeatures()
@@ -294,13 +300,13 @@
                                      if(pointInsideCircle(newCoords,center,radius)){  
                                          selectedFeatures.push(allfeatures[i]); 
                                      }
-								} catch (e) {
-									//多边形处理
-									var points=polygon.getCoordinates();
-									if(insidePolygon(points[0], newCoords)){
-										selectedFeatures.push(allfeatures[i]);
-									}
-								}
+    							} catch (e) {
+    								//多边形处理
+    								var points=polygon.getCoordinates();
+    								if(insidePolygon(points[0], newCoords)){
+    									selectedFeatures.push(allfeatures[i]);
+    								}
+    							}
                             }  
                             //框选出的点处理
                             if(selectedFeatures.length>0){
@@ -314,8 +320,7 @@
                             	}
                             	$('#selectDev').html(str);
                             }
-                            
-                        },300)  
+                        },300) 
                     })  
                 }
             }
@@ -323,7 +328,8 @@
             function clearDrawOnMap() {
                 source_draw.clear();
                 selectedFeatures=[];
-                addDrawOnMap("None");
+                //addDrawOnMap("None");
+                $('#selectDev').html('');
             }
             
             /** 
@@ -358,4 +364,45 @@
                 }  
                 return inside;  
             } 
-        
+            
+            
+            
+            /******************在地图上标记一个折线对象***************/
+            var timer_zx;
+            var zx_sl = 1;
+            function startDrawLine() {
+                if (null == l) {
+                    var style = createLineStyle("black", 2, 'round', 'round');
+                    l = createLine("zxtest", "zx", [], style);
+                    source_zx.addFeature(l);
+                }
+                var coord;
+                timer_zx = window.setInterval(function () {
+                    coord = randomPointJWD();
+                    console.log(coord)
+                    l.getGeometry().appendCoordinate(coord);
+                    //$("#zx_croodinates").html($("#zx_croodinates").html() + zx_sl++ + "." + ol.proj.transform(coord, proj_m, proj) + "<br>")
+                }, 1000);
+            }
+
+            function stopDrawLine() {
+                window.clearInterval(timer_zx);
+            }
+
+            function clearDrawLine() {
+                stopDrawLine();
+                source_zx.removeFeature(l);
+                l = null;
+                $("#zx_croodinates").html("");
+                zx_sl = 1;
+            }
+            
+            //随机生成当前范围内的一个经纬度坐标，用于在地图上标点
+            function randomPointJWD() {
+                var topleftPoint = map.getCoordinateFromPixel([10, 10]);
+                var centerPoint = map.getView().getCenter();
+                var bottomrightPoint = [centerPoint[0] + (centerPoint[0] - topleftPoint[0]), centerPoint[1] + (centerPoint[1] - topleftPoint[1])];
+                var jd = topleftPoint[0] + (bottomrightPoint[0] - topleftPoint[0]) * Math.random();
+                var wd = bottomrightPoint[1] + (topleftPoint[1] - bottomrightPoint[1]) * Math.random();
+                return [jd, wd];
+            }
